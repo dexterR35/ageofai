@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Age of AI</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 28V12l4-3v4l4-3v4l4-3 4 3V10l4 3V9l4 3v16z' fill='%23d6b46a'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header id="topbar">
+    <div class="brand">Age of <b>AI</b><span>World observatory</span></div>
+    <div class="clock" id="clock"><span class="time">--:--</span><span class="date">connecting…</span></div>
+    <nav class="tabs" role="tablist" aria-label="Observer views">
+      <button role="tab" data-tab="map" aria-selected="true">Map</button>
+      <button role="tab" data-tab="stats">Stats</button>
+      <button role="tab" data-tab="training">Training</button>
+      <button role="tab" data-tab="evolution">Evolution</button>
+      <button role="tab" data-tab="diplomacy">Diplomacy</button>
+      <button role="tab" data-tab="chronicle">Chronicle</button>
+    </nav>
+    <button id="timelapse" class="radio" title="The last 24 real hours in 2 minutes">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5a7 7 0 1 1-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M5 5v4h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 8v4l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <span>Timelapse 24h</span>
+    </button>
+    <button id="radio" class="radio" aria-pressed="false" title="Turn the commentator's voice on or off">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h3l5-4v14l-5-4H4z" fill="currentColor"/><path class="waves" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <span>Radio</span>
+    </button>
+  </header>
+
+  <div class="world-overview">
+    <nav class="civ-switch" id="civSwitch" aria-label="Selected civilization"></nav>
+    <div class="resources" id="resources" aria-label="Selected civilization's resources"></div>
+  </div>
+  <div class="observer-status">
+    <span id="connectionStatus" class="connection" data-state="connecting" role="status">Connecting</span>
+    <span id="worldMode">Autonomous world</span>
+    <span id="paceStatus"></span>
+  </div>
+  <div id="connectionNotice" class="connection-notice" hidden>
+    <span id="connectionDetail" role="status"></span>
+    <button id="connectionRetry" type="button">Retry now</button>
+  </div>
+
+  <div id="playbar" class="playbar" hidden>
+    <span class="rec">TIMELAPSE</span><span id="playTime"></span>
+    <span class="track"><i id="playPos"></i></span>
+    <button id="playStop">Back to live</button>
+  </div>
+  <div id="ticker" class="ticker" hidden><span class="onair">ON AIR</span><span id="tickerText"></span></div>
+
+  <main id="views">
+    <section id="view-map" class="view active" aria-label="Map">
+      <div id="map"></div>
+      <div class="map-tools" aria-label="Map controls">
+        <div class="panel-controls" id="panelControls" aria-label="Map information">
+          <button data-panel="kingdoms" aria-pressed="false" aria-controls="civPanel">Kingdoms</button>
+          <button data-panel="thoughts" aria-pressed="false" aria-controls="thoughtPanel">Thoughts</button>
+          <button data-panel="journal" aria-pressed="false" aria-controls="journalPanel">Journal</button>
+        </div>
+        <button id="centerMap" title="Center on the selected civilization">Home</button>
+        <button id="zoomOut" aria-label="Zoom out">−</button>
+        <button id="zoomIn" aria-label="Zoom in">+</button>
+        <button id="focusMap" aria-pressed="false">Hide panels</button>
+      </div>
+      <aside class="panel left" id="civPanel" aria-label="Kingdoms"></aside>
+      <aside class="panel right" id="thoughtPanel" aria-label="The AI's thoughts">
+        <h2>The AI's thoughts</h2>
+        <ol id="thoughts" class="feed"><li class="empty">The next council's decisions will appear here.</li></ol>
+      </aside>
+      <section class="panel bottom" id="journalPanel" aria-label="Journal">
+        <h2>Journal</h2>
+        <ol id="journal" class="feed"><li class="empty">Waiting for the world's first events.</li></ol>
+      </section>
+      <div class="minimap"><canvas id="minimap" width="256" height="130" aria-label="Minimap: click to move the view"></canvas></div>
+      <div class="map-hint">Drag to move · wheel to zoom · click a person</div>
+      <div id="tip" class="tip" hidden></div>
+    </section>
+
+    <section id="view-stats" class="view page" aria-label="Stats">
+      <div class="page-inner">
+        <h1>Stats</h1>
+        <p class="sub">One point per game day, from the live world.</p>
+        <div class="filters" id="statsCiv"></div>
+        <div class="grid2">
+          <figure class="chart" id="chartPop"></figure>
+          <figure class="chart" id="chartCastle"></figure>
+          <figure class="chart wide" id="chartRes"></figure>
+          <figure class="chart" id="chartMorale"></figure>
+          <figure class="chart" id="chartBuildings"></figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-training" class="view page" aria-label="Training">
+      <div class="page-inner">
+        <div class="training-heading"><div><h1>Training</h1><p class="sub">Every experiment leaves a record. Explore the strategies, scores and lessons from each round.</p></div><span class="training-saved">Saved locally</span></div>
+        <div id="trainingStatus" class="training-status" role="status">Loading training history…</div>
+        <div id="trainingMetrics" class="training-metrics"></div>
+        <figure class="chart" id="chartTraining"></figure>
+        <section class="card training-history" aria-label="Training history">
+          <h2>All training rounds</h2><p class="sub">Select a round to explore its report. Scores are weighted objectives, not win percentages.</p>
+          <div id="trainingHistory" class="training-table-wrap"></div>
+          <p class="training-note">Older rounds kept their scores without saving benchmark settings. Their reports are available, but a reliable score change cannot be calculated.</p>
+        </section>
+        <section id="trainingDetail" class="training-detail" aria-label="Selected training report"></section>
+      </div>
+    </section>
+
+    <section id="view-evolution" class="view page" aria-label="Evolution">
+      <div class="page-inner">
+        <h1>Evolution</h1>
+        <p class="sub">Strategies evolve through simulated games. Compare benchmark scores only when their test settings match. Open Training for a report on each round.</p>
+        <div id="stall"></div>
+        <div class="grid2">
+          <figure class="chart wide" id="chartNights"></figure>
+          <div class="card" id="genes"></div>
+          <div class="card" id="lessons"></div>
+          <div class="card" id="hall"></div>
+          <div class="card" id="rulebook"></div>
+          <div class="card wide" id="tree"><h2>Family tree</h2><div class="empty">Click "Family tree" next to the genes of today's best genome.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-diplomacy" class="view page" aria-label="Diplomacy">
+      <div class="page-inner narrow">
+        <h1>Diplomacy</h1>
+        <p class="sub">What the two kings say to each other. Words can lie; goods and treaties are tracked, and a broken promise halves the other's trust.</p>
+        <div id="dipHead" class="dip-head"></div>
+        <section class="rivalry" aria-label="Rivalry">
+          <h2>Rivalry</h2>
+          <p class="sub">Each king decides war and peace with his own model and plays his own lineage of genomes. Who fares better?</p>
+          <div id="rivalry"><div class="empty">Loading the scoreboard…</div></div>
+        </section>
+        <ol id="chat" class="chat"></ol>
+      </div>
+    </section>
+
+    <section id="view-chronicle" class="view page" aria-label="Chronicle">
+      <div class="page-inner narrow">
+        <h1>The Chronicle of the Kingdoms</h1>
+        <form id="chronSearch" class="search" role="search"><input type="search" name="q" placeholder="Search the archive…" aria-label="Search the Chronicle"><button>Search</button></form>
+        <div id="chronicles"></div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="card" aria-label="Person card"><div id="cardBody"></div></dialog>
+
+  <script src="/static/vendor/pixi-8.22.0.min.js"></script>
+  <script type="module" src="/static/app.js"></script>
+</body>
+</html>

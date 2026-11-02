@@ -1,0 +1,104 @@
+# Continuous civilization mode. Merged over rules.yaml; the classic world is separate.
+simulation:
+  speed: 12  # five real minutes per game hour
+  persistent: true
+  night_training: false  # classic two-lineage tournaments are not four-civilization training
+  offline: pause
+  adaptive_clock:
+    enabled: true
+    grace_seconds: 180
+    slow_after_seconds: 600
+    crisis_grace_seconds: 30
+    waiting_speed: 3
+    minimum_speed: 1
+    recovery_delay_seconds: 15
+    recovery_step_seconds: 5
+    max_lead_game_seconds: 60
+features:
+  bandits: false  # the classic camp is balanced for two capitals; regional camps come later
+map:
+  size: 256
+  rivers: {enabled: true, crossings: 4}
+civs:
+  - {id: north, name: North, color: "#3b82f6"}
+  - {id: east, name: East, color: "#d49a26"}
+  - {id: south, name: South, color: "#ef4444"}
+  - {id: west, name: West, color: "#45b98d"}
+llm:
+  models: {north: qwen3:8b, east: gemma3:12b, south: gemma3:12b, west: qwen3:8b}
+genome:
+  live_start: null  # equal starting priorities; models and experience shape later differences
+council:
+  every_minutes: 360
+  adaptive: true
+  max_interval_hours: 24
+  directive_hours: 6
+  urgent_cooldown_minutes: 10
+  max_pending: 1
+  decision_max_game_hours: 3
+  decision_max_real_seconds: 900
+images:
+  backend: off
+wonder:
+  reset_world: false
+buildings:
+  types:
+    school: {label: School, castle: 2, cost: {wood: 120, stone: 40, coins: 80}, hours: 8, max: 2, size: 2, material: wood}
+    library: {label: Library, castle: 3, cost: {wood: 180, stone: 100, coins: 120}, hours: 12, max: 2, size: 2, material: stone}
+    tavern: {label: Tavern, castle: 3, cost: {wood: 140, stone: 40, coins: 80}, hours: 10, max: 3, size: 2, material: wood}
+    shrine: {label: Shrine, castle: 3, cost: {wood: 80, stone: 100, coins: 60}, hours: 10, max: 2, size: 2, material: stone}
+    town_hall: {label: Town Hall, castle: 4, cost: {wood: 240, stone: 200, coins: 180}, hours: 20, max: 1, size: 3, material: stone}
+    miners_lodge: {label: Miners Lodge, castle: 3, cost: {wood: 140, stone: 100, coins: 90}, hours: 12, max: 2, size: 2, material: wood}
+    guild_hall: {label: Guild Hall, castle: 5, cost: {wood: 280, stone: 200, coins: 220}, hours: 22, max: 1, size: 3, material: stone}
+    brickyard: {label: Brickyard, castle: 3, cost: {wood: 160, stone: 80, coins: 80}, hours: 12, max: 2, size: 2, material: stone}
+    academy: {label: Academy, castle: 6, cost: {wood: 300, stone: 400, coins: 350, bricks: 100}, hours: 30, max: 2, size: 3, material: stone}
+    foundry: {label: Foundry, castle: 6, cost: {wood: 280, stone: 350, coins: 250, bricks: 80}, hours: 26, max: 2, size: 3, material: stone}
+    glassworks: {label: Glassworks, castle: 6, cost: {wood: 220, stone: 280, coins: 200, bricks: 60}, hours: 24, max: 2, size: 2, material: stone}
+    university: {label: University, castle: 8, cost: {stone: 700, coins: 700, bricks: 250, glass: 100}, hours: 50, max: 1, size: 4, material: stone}
+    factory: {label: Factory, castle: 8, cost: {stone: 600, coins: 600, bricks: 200, steel: 100}, hours: 45, max: 3, size: 4, material: stone}
+    civic_office: {label: Civic Office, castle: 8, cost: {stone: 350, coins: 450, bricks: 120, glass: 60}, hours: 32, max: 2, size: 3, material: stone}
+    apartments: {label: Apartments, castle: 9, cost: {stone: 650, coins: 500, bricks: 250, steel: 80}, hours: 40, max: 6, size: 3, material: stone}
+    research_lab: {label: Research Laboratory, castle: 10, cost: {stone: 700, coins: 1000, steel: 200, glass: 160, components: 50}, hours: 60, max: 2, size: 3, material: stone}
+    skyscraper: {label: Skyscraper, castle: 10, cost: {stone: 1200, coins: 2000, steel: 500, glass: 400, components: 100}, hours: 100, max: 4, size: 4, material: stone}
+development:
+  enabled: true
+  fictional_culture: true
+  research_min_population: 4
+  research_buildings: [school, library, academy, university, research_lab]
+  review_days: 7
+  term_days: 28
+  retirement_age: 65
+  experiment_cost: {coins: 30, wood: 15}
+  coin_reserve: 40
+  experiment_hours: 18
+  experiment_interval_hours: 48
+  trials: 8
+  candidate_gain: 0.10
+  trial_noise: 0.14
+  minimum_gain: 0.025
+  discovery_gain_cap: 0.12
+  discoveries_per_field: 4
+  bonus_cap: 1.0
+  eras:
+    settlement: {castle: 1}
+    civic: {castle: 4, population: 10, discoveries: 2, education: 5}
+    industrial: {castle: 8, population: 30, discoveries: 8, education: 20}
+    modern: {castle: 10, population: 60, discoveries: 16, education: 50}
+  buildings:
+    school: {era: settlement, population: 4, education: 0.3, effects: {education: 0.10}, upkeep: {coins: 0.5}, benefit: {tools: 0.5}}
+    library: {era: settlement, population: 6, requires: {school: 1}, education: 0.4, effects: {education: 0.15}, upkeep: {coins: 0.5}, benefit: {tools: 0.4}}
+    tavern: {era: settlement, population: 6, effects: {happiness: 2}, upkeep: {food: 2, coins: 0.5}, benefit: {houses: 0.3}}
+    shrine: {era: settlement, population: 6, effects: {happiness: 1}, upkeep: {coins: 0.3}, benefit: {houses: 0.2}}
+    town_hall: {era: civic, population: 10, effects: {construction: 0.08}, upkeep: {coins: 1}, benefit: {castle: 0.35}}
+    miners_lodge: {era: settlement, population: 6, requires: {quarry: 1}, effects: {stone: 0.10, ore: 0.10, gold: 0.10}, upkeep: {coins: 0.5}, benefit: {stone: 0.3, ore: 0.2, gold: 0.2}}
+    guild_hall: {era: civic, population: 14, effects: {wood: 0.10, stone: 0.10}, upkeep: {coins: 1}, benefit: {tools: 0.4}}
+    brickyard: {era: settlement, population: 6, requires: {quarry: 1}, recipe: {input: {stone: 2, wood: 1, coins: 0.2}, output: {bricks: 1}}, benefit: {tools: 0.4}}
+    academy: {era: civic, population: 18, requires: {library: 1}, education: 0.8, effects: {education: 0.25}, upkeep: {coins: 2}, benefit: {tools: 0.6}}
+    foundry: {era: civic, population: 20, requires: {iron_mine: 1}, recipe: {input: {ore: 2, wood: 2, coins: 0.5}, output: {steel: 1}}, benefit: {tools: 0.5}}
+    glassworks: {era: civic, population: 20, recipe: {input: {stone: 2, wood: 2, coins: 0.3}, output: {glass: 1}}, benefit: {tools: 0.4}}
+    university: {era: industrial, population: 30, requires: {academy: 1}, education: 1.5, effects: {education: 0.30}, upkeep: {coins: 4}, benefit: {tools: 0.7}}
+    factory: {era: industrial, population: 30, requires: {foundry: 1}, recipe: {input: {steel: 1, wood: 2, coins: 1}, output: {components: 1}}, effects: {construction: 0.10}, benefit: {tools: 0.5}}
+    civic_office: {era: industrial, population: 30, requires: {town_hall: 1}, effects: {construction: 0.12}, upkeep: {coins: 2}, benefit: {castle: 0.4}}
+    apartments: {era: industrial, population: 30, housing: 12, upkeep: {coins: 1}, benefit: {houses: 0.5}}
+    research_lab: {era: modern, population: 60, requires: {university: 1}, education: 2.0, effects: {education: 0.40}, upkeep: {coins: 6}, benefit: {tools: 0.8}}
+    skyscraper: {era: modern, population: 60, requires: {factory: 1}, housing: 30, upkeep: {coins: 4}, benefit: {houses: 0.7}}

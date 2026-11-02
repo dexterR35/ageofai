@@ -1,0 +1,28 @@
+[project]
+name = "ageofai"
+version = "0.1.0"
+description = "A medieval strategy world that plays itself, 24/7, in real time."
+requires-python = ">=3.12"
+dependencies = [
+    "pyyaml>=6.0",
+    "tzdata>=2024.1",
+    "fastapi>=0.160",
+    "uvicorn>=0.50",
+    "websockets>=17",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "httpx>=0.28"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["engine", "ai", "server"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q -m 'not slow'"
+markers = ["slow: long fast-mode runs (run with -m slow)"]
+filterwarnings = ["ignore::DeprecationWarning:fastapi.testclient", "ignore:Using `httpx`"]

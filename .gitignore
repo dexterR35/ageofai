@@ -1,0 +1,31 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+data/*.db
+data/images/
+data/audio/
+*.log
+*.egg-info/
+data/*.db-wal
+data/*.db-shm
+data/saves/
+data/backups/
+data/logs/
+data/archive/
+data/balance.yaml
+data/rules_history.yaml
+data/scenarios/
+
+# downloaded tools (Piper voice, about 85 MB)
+tools/
+.venv-rl/
+data/rl/
+
+# local credentials and machine-specific settings
+.env
+.env.*
+!.env.example
+!.env.sample
+.claude/settings.local.json
+.claude/launch.json

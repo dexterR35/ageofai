@@ -1,0 +1,794 @@
+# Age of AI — every number from the design document lives here.
+# The game is balanced by editing this file, never the code.
+# Units: hours are real hours, distances are tiles (1 tile = 10 m), rates are units/hour.
+
+version: 7
+
+# Version-2 systems can be switched off (tests, comparisons with version 1).
+features:
+  happiness: true    # people with their own wishes; village morale = average happiness
+  families: true     # couples and children
+  events: true       # fires, disease, wolves, storms…
+  tech: true         # version 7: the tech tree at the castle
+  roads: true        # version 7: roads and carts
+  fog: true          # version 7: fog, scouts, deposits must be discovered
+  bandits: true      # version 7: a neutral bandit camp raids the richest, weakest kingdom
+
+time:
+  timezone: Europe/Bucharest
+  real_tick_seconds: 1
+  fast_tick_seconds: 10
+  lunch: ["12:00", "13:00"]
+  evening_end: "22:00"        # 22:00–work start = night (sleep)
+  tactical_interval_minutes: 5
+
+# Work windows per season. Lunch 12–13 is always free; h = sum of the windows.
+seasons:
+  spring:
+    months: [3, 4, 5]
+    work: [["07:00", "12:00"], ["13:00", "19:00"]]   # h = 11
+    farm: 1.0
+    fruit: 0.0
+    hunt: 1.0
+    walk: 1.0
+    build: 1.0
+    firewood_per_house: 0
+  summer:
+    months: [6, 7, 8]
+    work: [["06:30", "12:00"], ["13:00", "19:30"]]   # h = 12
+    farm: 1.3
+    fruit: 1.0
+    hunt: 1.0
+    walk: 1.0
+    build: 1.0
+    firewood_per_house: 0
+  autumn:
+    months: [9, 10, 11]
+    work: [["07:30", "12:00"], ["13:00", "18:30"]]   # h = 10
+    farm: 1.2
+    fruit: 1.5
+    hunt: 1.0
+    walk: 1.0
+    build: 1.0
+    firewood_per_house: 0
+  winter:
+    months: [12, 1, 2]
+    work: [["08:00", "12:00"], ["13:00", "17:00"]]   # h = 8
+    farm: 0.5
+    fruit: 0.0
+    hunt: 0.7
+    walk: 0.8
+    build: 0.7
+    firewood_per_house: 5
+
+sowing:
+  month: 3                 # farms must be sown in March
+  work_hours: 11           # 1 work-day of one farmer per farm
+  unsown_multiplier: 0.5   # a farm not sown by April produces ×0.5 until next March
+
+winter:
+  days: 90
+  start_bonus_food: 1000           # civ born between these dates gets extra food
+  start_bonus_from: [10, 1]        # [month, day]
+  start_bonus_to: [2, 28]
+  no_firewood_morale_per_day: -0.15
+
+resources: [food, wood, stone, ore, gold, coins]
+
+start_stock: {food: 200, wood: 200, stone: 50, ore: 0, gold: 0, coins: 100}
+
+storage:
+  castle_cap: 500              # per resource
+  granary_per_level: 500       # every granary level adds this to every resource…
+  granary_food_per_level: 2000 # …and this on top for food
+  food_spoil_per_day: 0.001
+
+economy:
+  tax_per_person_per_day: 2       # improvements §3: the doc's 1 left castle 4 past day 90; with 2 it comes by day ~50
+  mint_coins_per_gold: 2.5
+  mint_level_bonus: 0.25
+  mint_gold_per_day_per_level: 40
+
+# Gathering. R = C / (C/(r·m) + 2d/v)
+gathering:
+  carry: 10
+  walk_tiles_per_hour: 480
+  depot_bonus_per_level: 0.10
+
+# Jobs that gather. `tool` is the craft whose tools apply, `season` the seasonal multiplier key.
+jobs:
+  farm:  {resource: food,  rate: 12, tool: farmer,      node: farm,   season: farm}
+  hunt:  {resource: food,  rate: 18, tool: farmer,      node: animal, season: hunt}
+  fruit: {resource: food,  rate: 14, tool: farmer,      node: bush,   season: fruit}
+  wood:  {resource: wood,  rate: 10, tool: lumberjack,  node: tree}
+  stone: {resource: stone, rate: 6,  tool: stonecutter, node: stone}
+  ore:   {resource: ore,   rate: 5,  tool: iron_miner,  node: iron}
+  gold:  {resource: gold,  rate: 3,  tool: gold_miner,  node: gold}
+
+# Map resource nodes. `blocks` = cannot be walked through (workers stand next to it).
+nodes:
+  tree:   {amount: 100,  regrow_days: 30, blocks: false, size: 1, max_workers: 1}
+  bush:   {amount: 150,  regrow_days: 30, blocks: false, size: 1, max_workers: 1}
+  animal: {amount: 100,  regrow_days: 30, blocks: false, size: 1, max_workers: 1}
+  stone:  {amount: 2000, blocks: true, size: 2, max_workers: 4}
+  iron:   {amount: 1500, blocks: true, size: 2, max_workers: 4}
+  gold:   {amount: 1000, blocks: true, size: 2, max_workers: 4}
+
+people:
+  max_workers: 100          # army plan: up to 100 workers at castle 10 (was 20)
+  workers_base: 2           # W_max(L) = 2 + 2L for the first levels…
+  workers_per_castle_level: 2
+  workers_by_castle: [4, 6, 8, 14, 22, 32, 44, 58, 76, 100]   # …then more, so a big army can be fed
+  pop_cap: 300              # army plan: 300 per castle, villagers and soldiers together (was 200)
+  castle_beds: 4            # P_cap = 4 + Σ(3 + n_i)
+  house_beds_base: 3
+  hp: 25
+  build_rate: 1             # man-hours of construction per hour
+  days_per_year: 7          # 1 year of life = 7 real days
+  start_ages: [20, 24]
+  stages:                   # `until` = first age NOT in this stage
+    - {name: child, until: 14,  work: 0.0, food_per_day: 24}
+    - {name: youth, until: 18,  work: 0.7, food_per_day: 48}
+    - {name: adult, until: 51,  work: 1.0, food_per_day: 48}
+    - {name: elder, until: 999, work: 0.7, food_per_day: 40}
+  recruit: {food: 60, hours: 3, age: [18, 30]}
+  death: {from_age: 55, base: 0.02, growth: 0.1}   # q(a) = 0.02·e^(0.1(a−55)) per game-year
+  xp: {days_per_step: 10, step: 0.01, max: 0.15}   # +1% per 10 days worked, max +15%
+  hunger_leave_days: 3
+
+traits:
+  none_chance: 0.30
+  list:
+    hardworking: {label: Hard-working, work: 1.10}
+    lazy:        {label: Lazy,         work: 0.90}
+    strong:      {label: Strong,       carry: 14}
+    quick:       {label: Quick,        walk: 1.15}
+    sickly:      {label: Sickly,       disease: 2.0}
+    brave:       {label: Brave,        attack: 1.10}
+
+# ---------------------------------------------------------------- version 2: people with wishes
+# H ← H + 0.1·(H_target − H) + shocks
+# H_target = 50 + 10[ate] − 30[hungry] + 10[bed] − 20[no bed] + 4·min(3, friends) − 10[works far] − 10[no fire in winter]
+happiness:
+  start: 72
+  pull: 0.1
+  base: 50
+  ate: 10
+  hungry: -30
+  bed: 10
+  no_bed: -20
+  per_friend: 4
+  max_friends_counted: 3
+  far_work: -10
+  far_tiles: 30
+  no_fire: -10
+  shock_close_death: -15
+  shock_child: 10
+  shock_attacked: -10
+  morale_base: 0.5          # m_M = 0.5 + 0.007·H̄
+  morale_per_point: 0.007
+  green_from: 60            # map badge: green ≥ 60, yellow 25–60, red < 25
+  yellow_from: 25
+
+friendship:
+  together_tiles: 10        # same resource, at most 10 tiles apart
+  gain_per_day: 1
+  loss_per_day: 0.5
+  max: 100
+  friend_from: 50
+
+evening:                    # 19:00–22:00, each person picks one
+  weights: {visit: 1.0, rest: 1.0, overtime: 0.4}
+  trait_weights:            # multiply the base weights
+    hardworking: {overtime: 4.0}
+    lazy: {rest: 4.0, overtime: 0.1}
+    sickly: {visit: 0.5}
+  negative_traits: [lazy, sickly]
+  no_negative_visit_bonus: 2.0
+  visit_friendship: 2
+  rest_happiness: 1
+  overtime_hours: 1
+  overtime_happiness: -2
+
+strike:
+  below: 25
+  days: 3                   # 3 days below → no work on the 4th
+  event_min_people: 3       # 3+ on strike at once = a "Strike" event (I = 6)
+
+flight:
+  below: 15
+  days: 5
+  chance_per_day: 0.10
+  min_relation: -50         # joins the other civ only if R > −50 and it has room
+
+families:
+  birth_chance_per_day: 0.01
+  min_morale: 0.9
+  min_food_days: 3
+  inherit_trait_chance: 0.5
+
+# ---------------------------------------------------------------- version 2: random events
+# P_day = p0 · m_season · (1 − r_defense). Seasons not listed under `only` never get the event.
+events:
+  fire:          {p0: 0.002, mult: {summer: 2.0}, hp_loss_per_hour: 0.05, extinguish_hours: 1, firefighters: 2,
+                  well_reduction: 0.5, well_radius: 15}
+  disease:       {p0: 0.003, mult: {winter: 2.0}, sickly_mult: 2.0, well_reduction: 0.5, morale_from: 1.0,
+                  morale_reduction: 0.25, share_sick: 0.2, sick_days: 5, death_share: 0.05}
+  harvest:       {p0: 0.01, only: [summer, autumn], farm_mult: 1.5, days: 3}
+  wolves:        {p0: 0.005, mult: {winter: 1.5}, far_tiles: 30, count: [2, 4], tower_radius: 7,
+                  death_per_wolf: 0.15, injured_days: 2}   # until combat exists (v5): death chance 15% per wolf
+  mine_collapse: {p0: 0.001, closed_days: 2, death_chance: 0.1, safe_tool_level: 3, tool_reduction: 0.5}
+  storm:         {p0: 0.005, only: [spring, autumn], hours: 6}
+  merchant:      {p0: 0.005, needs: market, price_mult: 0.7, days: 1}
+
+# ---------------------------------------------------------------- version 2: night evolution
+evolution:
+  population: 32
+  elite: 4
+  tournament: 3
+  mutation_rate: 0.15
+  mutation_scale: 0.10         # ±10% of the gene's range
+  # How the next night's genomes are made: cmaes = CMA-ES (learns which directions of the genes work, per lineage,
+  # state kept in SQLite; the night's best is kept); ga = the old crossover + mutation (elite, tournament above).
+  method: cmaes
+  cma_sigma: 0.2               # CMA-ES's first step size (share of each gene's range)
+  peer_games: 6                # 32 × 6 / 2 = 96 games
+  champion_games: 2            # 32 × 2 = 64 games
+  match_days: 120               # improvements §2: long enough for armies (castle 4 comes around day 50)
+  processes: 6
+  e_max: 60000                 # resources gathered in a 60-day match that count as full marks (E/E_max ≤ 1)
+  e_max_per_day: 1000          # longer matches scale it: E_max = 1000 × days
+  fitness: {castle: 0.35, gathered: 0.25, pop: 0.15, survival: 0.15, wins: 0.10}
+  draw_margin: 0.02            # F within 2% = draw
+  elo_start: 1000
+  elo_k: 32
+  hall_size: 20                # with lineages: 10 places per kingdom
+  hall_protected: 3
+  # Rivalry: each kingdom keeps its own lineage (half the population each, seeded with genome.live_start);
+  # North's genomes are scored against South's genomes and champions, and vice versa (co-evolution).
+  lineages: true
+  start: "00:30"
+  morning: "07:00"
+  # Nights differ (new maps, random seasons), so their scores can't be compared directly.
+  # The benchmark replays the night's top genomes on the SAME 8 games every night
+  # (2 per season, fixed maps and luck) against the default genome. "Rising 5 nights" uses it.
+  benchmark:
+    candidates: 4
+    games_per_season: 4          # improvements §6: 16 fixed games (was 8): a "rise" means more
+    seed: 777
+  # improvements §2: some rounds start from a world in mid-game (castle 4, armies possible), so the war genes
+  # are trained too. The scenarios are made once (default genome, fast mode) and kept in data/scenarios.
+  midgame:
+    rounds: 2                    # of the night's 8 rounds (peer rounds first)
+    scenarios: 4                 # one per season
+    until_castle: 4
+    max_days: 200
+    days: 60                     # how long a mid-game match lasts after the scenario
+    seed: 4242
+
+morale:            # version 1 rules (used when features.happiness is off)
+  start: 1.0
+  min: 0.5
+  max: 1.2
+  fed_and_housed: 0.05
+  hunger: -0.10
+  no_bed: -0.20
+  attacked: -0.15
+
+tools:
+  crafts: [farmer, lumberjack, stonecutter, iron_miner, gold_miner, builder]
+  max_level: 4
+  bonus_per_level: 0.2           # m_T = 1 + 0.2·T
+  base_cost: {wood: 40, ore: 30, coins: 20}
+  cost_growth: 1.8               # × 1.8^(T−1)
+  base_hours: 4
+  time_growth: 1.6               # × 1.6^(T−1)
+  requires:                      # tool level → forge level, castle level
+    1: {forge: 1, castle: 3}
+    2: {forge: 2, castle: 4}
+    3: {forge: 3, castle: 7}
+    4: {forge: 4, castle: 9}
+  parallel_every_forge_levels: 3 # a forge of level n researches 1 + ⌊n/3⌋ at once
+  labels: {farmer: farmer, lumberjack: lumberjack, stonecutter: stonecutter, iron_miner: iron miner, gold_miner: gold miner, builder: builder}
+
+construction:
+  max_builders: 5
+  builder_exponent: 0.8     # t_real = t_n / (b^0.8 · m_T)
+  stages: [0.0, 0.25, 0.5, 0.75, 1.0]   # foundation, scaffold, walls, roof, done
+
+buildings:
+  max_level: 5
+  cost_growth: 1.6     # Cost_n = Cost_1 · 1.6^(n−1)
+  time_growth: 1.5     # t_n = t_1 · 1.5^(n−1)
+  effect_step: 0.25    # Effect_n = Effect_1 · (1 + 0.25(n−1))
+  hp_step: 0.3         # HP_n = HP_1 · (1 + 0.3(n−1))
+  default_hp: 500
+  types:
+    house:          {label: House,              castle: 1, cost: {wood: 60, stone: 20},               hours: 3,  max: null, size: 2, material: wood}
+    farm:           {label: Farm,             castle: 1, cost: {wood: 80},                          hours: 4,  max: 40,   size: 3, material: wood, walkable: true, workers: 2, level_bonus: 0.10, economic: true}
+    lumber_camp:    {label: Lumber Camp,         castle: 1, cost: {wood: 100},                         hours: 4,  max: 4,    size: 2, material: wood, depot: [wood], economic: true}
+    mill:           {label: Mill,             castle: 2, cost: {wood: 120, stone: 40},              hours: 6,  max: 3,    size: 2, material: wood, depot: [food], economic: true}
+    quarry:         {label: Quarry,           castle: 2, cost: {wood: 120},                         hours: 5,  max: 3,    size: 2, material: wood, depot: [stone], economic: true}
+    granary:        {label: Granary,            castle: 2, cost: {wood: 150, stone: 50},              hours: 6,  max: 4,    size: 2, material: wood, economic: true}
+    well:           {label: Well,           castle: 2, cost: {stone: 40},                         hours: 2,  max: 4,    size: 1, material: stone, since_version: 2}
+    forge:          {label: Forge,          castle: 3, cost: {wood: 150, stone: 80, coins: 30},   hours: 10, max: 1,    size: 2, material: stone}
+    iron_mine:      {label: Iron Mine,      castle: 3, cost: {wood: 150, stone: 60},              hours: 8,  max: 3,    size: 2, material: wood, depot: [ore], near: iron, economic: true}
+    wall:           {label: Wall,               castle: 3, cost: {stone: 30},                         hours: 1,  max: null, size: 1, material: stone, hp: 600}
+    barracks:       {label: Barracks,           castle: 4, cost: {wood: 200, stone: 120, coins: 50},  hours: 12, max: 3,    size: 2, material: wood}
+    tower:          {label: Watchtower,      castle: 4, cost: {wood: 50, stone: 150},              hours: 8,  max: 8,    size: 1, material: stone, hp: 800}
+    archery_range:  {label: Archery Range,    castle: 5, cost: {wood: 220, stone: 80, coins: 60},   hours: 12, max: 2,    size: 2, material: wood}
+    market:         {label: Market,             castle: 5, cost: {wood: 250, stone: 150, coins: 100}, hours: 18, max: 1,    size: 2, material: wood}
+    gold_mine:      {label: Gold Mine,       castle: 6, cost: {wood: 200, stone: 100},             hours: 12, max: 2,    size: 2, material: wood, depot: [gold], near: gold, economic: true}
+    mint:           {label: Mint,         castle: 7, cost: {stone: 200, ore: 100, gold: 50},    hours: 16, max: 1,    size: 2, material: stone}
+    stable:         {label: Stable,             castle: 7, cost: {wood: 250, stone: 100, coins: 80},  hours: 16, max: 2,    size: 2, material: wood}
+    siege_workshop: {label: Siege Workshop, castle: 8, cost: {wood: 300, ore: 150, coins: 100},   hours: 20, max: 1,    size: 2, material: wood}
+    # after castle 10: materials arrive on site little by little (like the castle); about 12 days with 5 builders
+    wonder:         {label: Wonder,         castle: 10, cost: {wood: 20000, stone: 30000, ore: 4000, gold: 3000, coins: 5000}, hours: 400, max: 1, size: 4, material: stone, hp: 15000}
+
+# What happens after castle 10 (your choice): the first kingdom to finish its Wonder wins the era.
+# In the live world a new era starts `new_era_days` later: a new map, both kingdoms start over with the best genomes.
+wonder:
+  type: wonder
+  new_era_days: 7
+  site_hp_from: 0.05          # a Wonder site is as strong as its progress (at least 5% of the finished Wonder)
+
+castle:
+  label: Castle
+  size: 3
+  max_level: 10
+  hp: 3000
+  depot: [food, wood, stone]
+  # Cost(L→L+1) = (300 wood, 200 stone, 100 coins)·1.7^(L−1) + 100 ore·1.7^(L−3) [L≥3] + 80 gold·1.7^(L−6) [L≥6]
+  base_cost: {wood: 300, stone: 200, coins: 100}
+  cost_growth: 1.7
+  extra_cost:
+    ore:  {base: 100, from_level: 3}
+    gold: {base: 80, from_level: 6}
+  base_hours: 24          # T(L→L+1) = 24h·1.4^(L−1) with `reference_builders`
+  time_growth: 1.4
+  reference_builders: 5
+  progressive_materials: true   # materials arrive gradually; progress ≤ delivered / required
+  kingdom_production_bonus: 0.10
+  ages:
+    1: Village Age
+    4: Bronze Age
+    7: Iron Age
+    10: Kingdom Age
+  # Requirements to START building level L. Kinds: building, workers, soldiers, tools, tools_all, economic_all.
+  requirements:
+    2:
+      - {building: house, count: 2}
+      - {building: farm, count: 1}
+      - {building: lumber_camp, count: 1}
+      - {workers: 4}
+    3:
+      - {building: house, count: 4}
+      - {building: farm, count: 2}
+      - {building: quarry, count: 1}
+      - {building: granary, count: 1}
+      - {workers: 6}
+    4:
+      - {building: house, count: 6, level: 2}
+      - {building: forge, count: 1}
+      - {building: iron_mine, count: 1}
+      - {tools: 3, level: 1}
+      - {workers: 8}
+    5:
+      - {building: barracks, count: 1}
+      - {building: mill, count: 1, level: 2}
+      - {building: tower, count: 2}
+      - {workers: 10}
+    6:
+      - {building: market, count: 1}
+      - {building: archery_range, count: 1}
+      - {building: house, count: 10}
+      - {tools: 3, level: 2}
+      - {workers: 12}
+    7:
+      - {building: gold_mine, count: 1}
+      - {building: forge, count: 1, level: 3}
+      - {building: granary, count: 1, level: 3}
+      - {workers: 14}
+      - {soldiers: 15}
+    8:
+      - {building: mint, count: 1}
+      - {building: stable, count: 1}
+      - {building: farm, count: 3, level: 3}
+      - {workers: 16}
+    9:
+      - {building: siege_workshop, count: 1}
+      - {economic_all: 4}
+      - {workers: 18}
+    10:
+      - {workers: 20}
+      - {tools_all: 4}
+      - {building: barracks, count: 2, level: 5}
+      - {soldiers: 50}
+
+# Genome (AI personality). [min, max]; `default` is the hand-made starting genome.
+genome:
+  genes:
+    g_food:               [0.2, 3.0]
+    g_wood:               [0.2, 3.0]
+    g_stone:              [0.2, 3.0]
+    g_ore:                [0.2, 3.0]
+    g_gold:               [0.2, 3.0]
+    g_houses:             [0.2, 3.0]
+    g_castle:             [0.2, 3.0]
+    g_tools:              [0.2, 3.0]
+    g_defense:            [0.2, 3.0]
+    theta_attack:         [1.0, 3.0]
+    food_reserve_days:    [0.0, 5.0]
+    worker_soldier_ratio: [0.1, 0.9]
+    winter_prep:          [0.5, 1.5]
+    prudence:             [0.0, 1.0]
+    diplomacy:            [0.0, 1.0]
+    honesty:              [0.0, 1.0]
+    deception:            [0.5, 2.0]
+    exploration:          [0.0, 1.0]   # version 7: how much a kingdom scouts
+    retreat_hp:           [0.1, 0.5]   # army plan: a wounded soldier goes home below this share of its HP
+    counter_attack:       [0.0, 1.0]   # army plan: the chance to strike back after a won defense
+  default:
+    g_food: 1.2
+    g_wood: 1.0
+    g_stone: 0.9
+    g_ore: 1.0
+    g_gold: 0.8
+    g_houses: 1.0
+    g_castle: 1.3
+    g_tools: 1.0
+    g_defense: 0.6
+    theta_attack: 2.0
+    food_reserve_days: 2.5
+    worker_soldier_ratio: 0.5
+    winter_prep: 1.0
+    prudence: 0.5
+    diplomacy: 0.5
+    honesty: 0.7
+    deception: 1.0
+    exploration: 0.5
+    retreat_hp: 0.25
+    counter_attack: 0.5
+  # The live world's first kingdoms, before any night of training, get two different minds (the rest of their
+  # genes are the default ones). They also seed each kingdom's own lineage (evolution.lineages): after the
+  # first night each kingdom plays the best genome of its own line.
+  live_start:
+    north: {name: builder, g_castle: 1.8, g_houses: 1.4, g_tools: 1.4, g_defense: 0.5, theta_attack: 2.6,
+            worker_soldier_ratio: 0.35, prudence: 0.7, diplomacy: 0.8, honesty: 0.85, exploration: 0.4}
+    south: {name: warlord, g_castle: 1.0, g_ore: 1.4, g_defense: 1.6, theta_attack: 1.4, worker_soldier_ratio: 0.65,
+            prudence: 0.35, diplomacy: 0.3, honesty: 0.45, deception: 1.5, exploration: 0.8, counter_attack: 0.8}
+
+ai:
+  tactical:
+    food_safety_margin: 0.15     # produce 15% more food than eaten
+    reserve_horizon_days: 4      # rebuild the food reserve within this many days
+    winter_prep_from_month: 8    # start filling winter reserves in August
+    winter_farmer_share: 0.5     # assumed share of people farming in winter (reserve formula)
+    builder_share_base: 0.15
+    builder_share_per_gene: 0.12 # share = base + per_gene·g_castle
+    castle_min_builders: 2
+    min_dwell_minutes: 60        # don't reshuffle a worker more often than this
+    max_sites_base: 1
+    workers_per_extra_site: 4
+    cap_full_ratio: 0.97         # stop gathering a resource when storage is this full
+    depot_far_tiles: 12          # a depot helps when work is farther than this
+    hunt_max_workers: 3
+    fruit_max_workers: 4
+    node_search_radius: 60       # max distance from the castle for gathering
+    food_outlook_days: 30        # a recruit must be feedable for this long (seasons included)
+    firewood_days: 10            # in winter keep wood for this many days of firewood
+
+map:
+  size: 128
+  # Each civilization gets a mirrored half of the map (180° rotation), so starts are fair.
+  castle_offset: [40, 20]          # top-left tile of the north castle
+  clear_radius: 7                  # no trees this close to a castle
+  lakes: {count: 2, radius: [3, 6], min_dist: 14}
+  forests:
+    near: {count: 1, dist: [9, 13], radius: [4, 6], density: 0.65}
+    far: {count: 9, dist: [16, 55], radius: [3, 7], density: 0.55}
+  # Castles 1→10 alone need ~33,600 stone, ~5,700 ore and ~840 gold (plus tools and units),
+  # so each half needs many deposits; the far ones make depots (quarry, mines) worth building.
+  deposits:
+    stone: [{count: 2, dist: [10, 16]}, {count: 6, dist: [18, 36]}, {count: 8, dist: [30, 58]}]
+    iron:  [{count: 1, dist: [16, 24]}, {count: 3, dist: [24, 40]}, {count: 3, dist: [36, 58]}]
+    gold:  [{count: 1, dist: [26, 38]}, {count: 4, dist: [34, 58]}]
+  bushes: {clusters: 2, dist: [6, 12], per_cluster: [5, 8]}
+  animals: {herds: 4, dist: [12, 40], per_herd: [3, 5]}
+
+civs:
+  - {id: north, name: North, color: "#3b82f6"}
+  - {id: south, name: South, color: "#ef4444"}
+
+# ---------------------------------------------------------------- version 3: the local AI (Ollama)
+llm:
+  host: http://127.0.0.1:11434
+  model: qwen3:8b               # the shared model (radio, Chronicle, lessons); change this line to try another
+  # Rivalry: a model per kingdom (missing = the line above). One GPU: the calls still go one at a time and
+  # Ollama swaps the models; a kingdom whose model is slow or not pulled plays on its genes meanwhile.
+  # Example:  models: {north: qwen3:14b, south: gemma3:12b}
+  models: {north: qwen3:8b, south: gemma3:12b}   # 5.2 GB + 8.2 GB: both fit on the 16 GB card
+  # Who sets each kingdom's character (its genes): genes = the night's training only; llm = the kingdom's own
+  # model only; mixed = the night's best at 07:00, then the model adjusts it. The model is asked at birth
+  # (new world, rebirth, new era) and every `mind_every_days`; it gets facts only, no advice.
+  mind: mixed
+  mind_every_days: 7
+  mind_step: 0.25               # a gene moves at most 25% of its range each time
+  mind_max_genes: 6             # and at most 6 genes change each time
+  embed_model: nomic-embed-text # memory vectors (optional: memory still works without it)
+  timeout_seconds: 120
+  temperature: 0.7
+
+council:
+  every_minutes: 30             # + immediately after big events (castle level, famine, fire, deaths)
+  directive_hours: 1            # how long the king's plan steers the tactical layer
+  urgent_kinds: [castle, fall, leave, fire, disease, wolves, flight, destroyed]
+  urgent_diplomacy: [attack, treaty, promise, spy_caught, battle]   # both kings meet within a minute
+  reflection: "22:00"           # the king writes 1–3 sentences about the day (memory, I = 8)
+  chronicle: "06:15"            # written now, published at 07:00
+  publish: "07:00"
+  referee_weekday: 6            # Sunday (Monday = 0)
+  referee_time: "06:05"
+
+# ---------------------------------------------------------------- version 4: the browser view
+web:
+  host: 127.0.0.1               # 0.0.0.0 = open the page from any device at home (cli: --host)
+  port: 8000
+  frame_seconds: 1.0            # how often the page gets the world's state
+  journal_lines: 60
+  thoughts_lines: 30
+
+commentator:
+  min_importance: 6             # speaks at events with I >= 6 (the Chronicle's importance formula)
+  per_hour: 20
+  quiet_from: "22:00"           # silent at night (battles excepted, from version 5)
+  quiet_to: "07:00"
+  max_chars: 200
+  keep_audio_days: 7
+  piper: tools/piper/app/piper/piper.exe                   # null = the browser speaks with its own voice
+  piper_voice: tools/piper/voices/en_US-lessac-medium.onnx # an English Piper voice (relative to the project folder)
+
+images:
+  backend: comfyui              # local ComfyUI over HTTP; "off" = no images
+  url: http://127.0.0.1:8188
+  at: "06:25"                   # after the Chronicle; Ollama is unloaded first (one GPU)
+  scenes_max: 3                 # plus 1 portrait a day
+  scene_min_importance: 7
+  size: 1024
+  steps: 20
+  timeout_seconds: 300
+  style: "medieval watercolor illustration, soft paper texture, muted colors, storybook"
+  models:                       # the doc's SDXL is not installed here; Flux 3 Klein is
+    unet: flux3_image_klein_sd_int8_convrot.safetensors
+    clip: qwen3vl_4b_fp8_scaled.safetensors
+    clip_type: flux3
+    vae: flux2-vae.safetensors
+    latent: EmptyFlux2LatentImage
+
+# ---------------------------------------------------------------- version 5: army, war, diplomacy, spies
+units:   # speed in tiles/hour; bonus = damage multiplier against a unit type
+  militia:   {label: Militia,   building: barracks,       castle: 4, cost: {food: 40, wood: 20, coins: 10},           hours: 1.0, hp: 40,  attack: 4,  armor: 0, range: 1, speed: 480}
+  spearman:  {label: Spearman,  building: barracks,       castle: 4, cost: {food: 35, wood: 25, coins: 15},           hours: 1.5, hp: 45,  attack: 3,  armor: 0, range: 1, speed: 480, bonus: {knight: 3.0}}
+  archer:    {label: Archer,    building: archery_range,  castle: 5, cost: {food: 30, wood: 45, coins: 10},           hours: 1.5, hp: 30,  attack: 5,  armor: 0, range: 5, speed: 480, bonus: {spearman: 1.5}}
+  swordsman: {label: Swordsman, building: barracks,       castle: 7, cost: {food: 60, ore: 20, gold: 15, coins: 20},  hours: 2.0, hp: 60,  attack: 8,  armor: 2, range: 1, speed: 450, bonus: {militia: 1.5}}
+  knight:    {label: Knight,    building: stable,         castle: 7, cost: {food: 80, ore: 40, gold: 40, coins: 40},  hours: 3.0, hp: 120, attack: 10, armor: 2, range: 1, speed: 1100, bonus: {archer: 1.5}}
+  ram:       {label: Ram,       building: siege_workshop, castle: 8, cost: {wood: 150, ore: 60, coins: 50},           hours: 5.0, hp: 200, attack: 40, armor: 5, range: 1, speed: 300, buildings_only: true}
+
+army:
+  food_per_day: 48              # each soldier
+  pay_coins_per_day: 1
+  unpaid_desert_share: 0.10     # unpaid soldiers who leave each day
+  hungry_desert_share: 0.10
+  combat_seconds: 2             # one round of blows every 2 s
+  luck: [0.9, 1.1]              # ε in D = max(1, A·k + U_weapons − (Ar + U_armor))·ε
+  aggro_tiles: 8                # soldiers engage enemies this close
+  defend_tiles: 14              # around our buildings counts as home ground
+  people_hp: 25                 # workers caught by an army can be hurt
+  heal_per_hour: 0.05           # garrisoned soldiers heal 5% of their HP an hour
+  retreat_below: 0.35           # an attacking army turns back below 35% of the HP it left with
+  vs_buildings: 0.10            # soldiers do 10% damage to walls and buildings; rams do full damage
+  repath_seconds: 30
+  queue_per_building: 5         # soldiers waiting to be trained per building
+  tower: {attack: 6, range: 7}  # watchtowers shoot at enemy soldiers
+  # ---- the army plan (docs/imbunatatiri.md, section 1)
+  veteran_kills: [5, 15]        # a soldier with 5 kills hits +10%, with 15 kills +20%
+  veteran_bonus: [0.10, 0.20]
+  promote:                      # pay the difference, half the training time, at the new unit's building
+    militia: swordsman
+    spearman: knight
+  promote_time_share: 0.5
+  muster_minutes: 30            # the army gathers before it marches, and sets out together
+  muster_share: 0.8             # …once 80% have arrived (or the time is up)
+  rally_tiles: 8                # the gathering point, this far from the castle toward the enemy
+  archer_behind: 3              # archers keep 3 tiles behind the front line
+  flank_tiles: 4                # cavalry rides this far to the side of the march
+  watch_tiles: 30               # an enemy army this close to our castle: everyone gathers to defend
+  counter_hours: 2              # after a won defense, strike back within 2 hours
+  counter_losses: 0.5           # …if the attacker lost at least half of its army
+  siege_rams: 2                 # rams taken along against towers and walls
+
+military_upgrades:              # at the Forge, from castle 5: +1 attack / +1 armor per level
+  from_castle: 5
+  max_level: 5                  # army plan: 5 levels (was 3); the uniforms on the map change with them
+  cost_factor: 1.5              # × the tool cost formula
+  labels: {weapons: Weapons, armor: Armor}
+
+war:
+  peace_days: 14                # nobody can attack in the first 14 days
+  min_army: 5                   # an attack (the genes' or the king's) needs at least this many soldiers
+  loot_share: 0.30              # destroying a building takes 30% of its cost
+  rebirth_days: 7               # a fallen kingdom is reborn with 2 people and the best genome
+  fast_mode_rebirth: false      # in the night's 60-day games a fallen side stays fallen (it lost)
+
+# Reinforcement learning (PPO): a small neural network that learned only from reward plays a kingdom.
+# Train it with  .venv-rl\Scripts\python -m rl.train_ppo  (Python 3.12 + PyTorch); it writes `policy`.
+# A kingdom listed in `civs` is then steered by the network (no LLM council for it); empty = nobody.
+rl:
+  policy: data/rl/policy.json
+  civs: []                      # e.g. [south]
+  step_hours: 6                 # the network decides every 6 game hours (the tactical formulas do the rest)
+  episode_days: 60              # training: game days per episode
+  envs: 6                       # training: games played at the same time (one process each)
+
+# Look-ahead (Monte Carlo): before the army marches, the live world plays out the futures in fast mode, with
+# and without the attack, and marches only if attacking scored better (the training's own score, ours minus theirs).
+lookahead:
+  enabled: true
+  hours: 72                     # how far each future is played (game hours; about 8 s of CPU per decision)
+  samples: 2                    # futures per option, each with different luck
+  hold_hours: 12                # after "wait", don't ask again for this long
+
+diplomacy:
+  R_start: 0
+  T_start: 0.5
+  states:                       # lower bound of R → state
+    - {from: 60,   name: friendship}
+    - {from: 20,   name: peace}
+    - {from: -20,  name: neutral}
+    - {from: -50,  name: tension}
+    - {from: -100, name: hostility}
+  R_change: {trade: 5, gift_per_50: 1, tribute_paid: 10, peace_day: 1, peace_day_max: 20, threat: -5, attack: -20,
+             treaty_broken: -60, spy_executed: -10}
+  T_kept: 0.1                   # T + 0.1
+  T_broken: 0.5                 # T × 0.5
+  friendship_price: 0.9         # trades between friends cost ×0.9
+  messages_per_day: 3
+  times: ["09:00", "18:00"]
+  max_chars: 300
+  max_trade: 500                # units of one resource in one deal
+  cart_speed: 480               # tiles/hour; a cart carries a deal from castle to castle
+  treaty_days: [3, 30]
+  trust_to_accept: 0.35
+
+spies:
+  building: market
+  castle: 5
+  cost: {food: 50, coins: 60}
+  hours: 2
+  hp: 20
+  speed: 600
+  max_active: 3
+  stay_hours: 6
+  error_with_spy: 0.20
+  error_without_spy: 0.50       # what a king sees of the neighbour with no spy, refreshed daily
+  catch_base: 0.01              # p_h = min(0.30, 0.01 + 0.02·towers in range)
+  catch_per_tower: 0.02
+  catch_max: 0.30
+  tower_radius: 14
+  turn_chance: 0.30
+  report_days: 3                # a report older than this is not trusted any more
+
+market:
+  morale_bonus: 0.05
+  base_price: {food: 1.0, wood: 1.0, stone: 1.2, ore: 2.0, gold: 4.0, coins: 1.0}
+  drop_per_100: 0.03            # each 100 sold lowers that price 3%
+  recover_per_hour: 0.01        # and it comes back 1% an hour
+  fee: 0.10
+  chunk: 100
+
+mint:                           # M = 2.5 · gold · (1 + 0.25(n − 1)), at most 40 gold a day per level
+  coins_per_gold: 2.5
+  level_bonus: 0.25
+  gold_per_day_per_level: 40
+  keep_gold: 100                # the mint leaves this much gold for other needs
+
+# ---------------------------------------------------------------- version 6: the world runs 24/7
+persistence:
+  save_seconds: 60              # a save every minute (the doctor restores one at most 1 minute old)
+  hourly_days: 7                # hourly copies; older ones keep one a day
+  catch_up_tick: 10             # missing hours are replayed in fast mode (10 s ticks, no local AI)
+
+doctor:
+  every_minutes: 10
+  stuck_minutes: 30             # a walking person on the same spot this long is stuck
+  idle_work_hours: 48           # nothing built, trained or moved for 48 working hours
+  llm_failures: 3               # 3 failed calls in a row within 60 s
+  llm_window_seconds: 60
+  llm_pause_minutes: 10         # then the tactical layer plays alone for a while
+  ollama_restart: null          # optional command to restart Ollama, e.g. "ollama serve" (null = don't)
+  slow_tick_ms: 500             # a tick slower than this for 5 minutes switches the decor off
+  slow_minutes: 5
+  disk_full: 0.90
+  keep_all_days: 30
+  report_weekday: 0             # Monday's Chronicle carries the doctor's weekly report
+  repeats_for_bug: 3            # a problem seen more than 3 times in a week is marked as a bug
+
+timelapse:
+  record_seconds: 120           # one frame every 2 real minutes → 720 frames a day
+  keep_hours: 48
+  play_seconds: 120             # the last 24 hours in 2 minutes
+
+# ---------------------------------------------------------------- version 7: later features (each can be switched off above)
+tech:                           # researched at the castle, one at a time (work hours)
+  plow:          {label: Plow,           cost: {wood: 100, ore: 50},    hours: 12, castle: 3, effect: "farms +15%"}
+  wheel:         {label: Wheel,          cost: {wood: 150, ore: 30},    hours: 12, castle: 3, effect: "unlocks carts"}
+  writing:       {label: Writing,        cost: {coins: 100},            hours: 24, castle: 4, effect: "experience grows 20% faster; a richer Chronicle"}
+  irrigation:    {label: Irrigation,     cost: {stone: 200, wood: 100}, hours: 24, castle: 5, effect: "farms +20% in summer"}
+  crop_rotation: {label: Crop Rotation,  cost: {food: 150, coins: 100}, hours: 24, castle: 5, effect: "winter farms ×0.7 instead of ×0.5"}
+  water_mill:    {label: Water Mill,     cost: {wood: 300, stone: 200}, hours: 48, castle: 6, effect: "all food +10%"}
+  medicine:      {label: Medicine,       cost: {coins: 200, gold: 50},  hours: 48, castle: 7, effect: "disease −50%, life +5 years"}
+tech_effects:
+  plow_farm: 0.15
+  irrigation_summer_farm: 0.20
+  rotation_winter_farm: 0.7
+  water_mill_food: 0.10
+  writing_xp: 1.2
+  medicine_disease: 0.5
+  medicine_years: 5
+
+roads:
+  from_castle: 2                # a village first needs its stone for the castle
+  stone_per_tile: 5
+  minutes_per_tile: 15          # one builder's work
+  speed: 1.5                    # people walk ×1.5 on a road (720 tiles/hour)
+  payback_days: 30              # build only if Σ(t_without − t_with)·R·30 days > cost
+  max_tiles: 40                 # one road at a time, at most this long
+  min_trips_per_day: 6
+carts:
+  cost: {wood: 60, ore: 20}
+  building: lumber_camp
+  building_level: 2
+  needs_tech: wheel
+  carry: 50                     # instead of 10
+  speed_field: 1.2
+  speed_road: 1.8
+  max: 6
+
+fog:
+  person_sight: 8
+  tower_sight: 12
+  scout_sight: 14
+  castle_sight: 22              # what a new kingdom knows around its castle
+  hidden: [iron, gold]          # deposits that can't be used until discovered
+  reveal_seconds: 60            # how often sight is updated (game time)
+scout:
+  cost: {food: 30, coins: 20}
+  hours: 1
+  speed: 900
+  hp: 20
+  max: 2
+
+bandits:
+  first_raid_days: 30           # the first raid comes after a month
+  min_castle: 2                 # a village too poor to rob (castle 1) is left alone
+  every_days: [10, 20]
+  base: 3                       # N = 3 + ⌊day / 15⌋, at most 30 (militia stats)
+  per_days: 15
+  max: 30
+  loot_share: 0.20              # reaching a castle: 20% of its stock
+  reward_gold: 50               # beaten: they leave 50 gold
+  friends_help_R: 60            # friends (R ≥ 60) defend each other
+
+notify:                         # phone notifications (ntfy or Telegram); off until you turn them on
+  enabled: false
+  service: ntfy                 # ntfy | telegram
+  ntfy_url: https://ntfy.sh
+  ntfy_topic: null              # pick a long private topic name
+  telegram_token: null
+  telegram_chat_id: null
+  min_importance: 8             # castle levels, attacks, war…
+  max_per_day: 10
+  chronicle: true               # plus the Chronicle's headline at 07:00
+
+evolution_watch:
+  stall_nights: 21              # RL is considered only if the benchmark hasn't improved for 21 nights

@@ -1,0 +1,9 @@
+# Name lists per civilization (keyed by civ id). Each civ has its own flavour.
+north:
+  male: [Toma, Andrei, Mihai, Ion, Vlad, Radu, Matei, Luca, Petru, Dan, Ștefan, Gheorghe, Pavel, Sava, Iacob, Grigore]
+  female: [Ana, Maria, Ioana, Elena, Ileana, Sofia, Irina, Daria, Anca, Raluca, Smaranda, Voica, Marta, Paraschiva, Safta, Tudora]
+  surnames: [Morar, Lupu, Ursu, Florea, Munteanu, Păduraru, Ciobanu, Rotaru, Fieraru, Olaru, Pescaru, Stoica, Brad, Vulpe, Cojocaru, Moraru]
+south:
+  male: [Bogdan, Costin, Tudor, Mircea, Sorin, Aurel, Horia, Iancu, Dorin, Nicu, Codrin, Vasile, Stan, Dragoș, Neculai, Oprea]
+  female: [Rodica, Floarea, Viorica, Brândușa, Doina, Lia, Mirela, Zamfira, Stanca, Dochia, Ilinca, Oana, Rada, Vica, Ruxandra, Neaga]
+  surnames: [Dragomir, Văduva, Neagu, Bălan, Dobre, Tănase, Preda, Bucur, Zamfir, Badea, Iordache, Mocanu, Sârbu, Vlase, Dumitrescu, Grecu]
